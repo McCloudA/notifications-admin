@@ -24,6 +24,7 @@ class ContactList(JSONModel):
     ALLOWED_PROPERTIES = {
         'id',
         'created_by',
+        'job_count',
         'service_id',
         'original_file_name',
         'row_count',

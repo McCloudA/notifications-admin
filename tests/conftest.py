@@ -1883,6 +1883,7 @@ def mock_get_contact_lists(mocker, api_user_active, fake_uuid):
             'id': fake_uuid,
             'original_file_name': 'EmergencyContactList.xls',
             'row_count': 100,
+            'job_count': 0,
             'service_id': service_id,
             'template_type': 'email',
         }, {
@@ -1891,6 +1892,7 @@ def mock_get_contact_lists(mocker, api_user_active, fake_uuid):
             'id': 'd7b0bd1a-d1c7-4621-be5c-3c1b4278a2ad',
             'original_file_name': 'phone number list.csv',
             'row_count': 123,
+            'job_count': 2,
             'service_id': service_id,
             'template_type': 'sms',
         }]
