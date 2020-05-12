@@ -66,8 +66,8 @@ class ModelList(ABC, Sequence):
     def model(self):
         pass
 
-    def __init__(self, *args):
-        self.items = self.client_method(*args)
+    def __init__(self, *args, **kwargs):
+        self.items = self.client_method(*args, **kwargs)
 
     def __getitem__(self, index):
         return self.model(self.items[index])
@@ -80,3 +80,22 @@ class ModelList(ABC, Sequence):
 
     def __radd__(self, other):
         return list(other) + list(self)
+
+
+class PaginatedModelList(ModelList):
+
+    response_key = 'data'
+
+    def __init__(self, *args, page=None, **kwargs):
+        try:
+            self.current_page = int(page)
+        except TypeError:
+            self.current_page = 1
+        response = self.client_method(
+            *args,
+            **kwargs,
+            page=self.current_page,
+        )
+        self.items = response[self.response_key]
+        self.prev_page = response.get('links', {}).get('prev', None)
+        self.next_page = response.get('links', {}).get('next', None)
