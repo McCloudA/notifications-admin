@@ -1,4 +1,7 @@
+from datetime import datetime, timedelta
+
 from flask import abort, current_app
+from notifications_utils.timezones import local_timezone
 from werkzeug.utils import cached_property
 
 from app.models import JSONModel
@@ -421,6 +424,15 @@ class Service(JSONModel):
             (dr for dr in self.data_retention if dr['notification_type'] == notification_type),
             {}
         ).get('days_of_retention', current_app.config['ACTIVITY_STATS_LIMIT_DAYS'])
+
+    def get_data_retention_cutoff(self, notification_type):
+        return (
+            datetime.utcnow() - timedelta(days=self.get_days_of_retention(notification_type))
+        ).astimezone(
+            local_timezone
+        ).replace(
+            hour=0, minute=0, second=0, microsecond=0,
+        )
 
     @property
     def email_branding_id(self):

@@ -1,5 +1,8 @@
 import uuid
 
+import pytest
+from freezegun import freeze_time
+
 from app.models.organisation import Organisation
 from app.models.service import Service
 from app.models.user import User
@@ -247,3 +250,34 @@ def test_service_without_organisation_doesnt_need_org_api(mocker, service_one):
 
     assert mock_redis_get.called is False
     assert mock_get_organisation.called is False
+
+
+@pytest.mark.parametrize('notification_type', (
+    'email', 'sms', 'letter',
+))
+def test_service_default_data_retention(
+    client_request, service_one, mock_get_service_data_retention, notification_type,
+):
+    assert Service(service_one).get_days_of_retention(notification_type) == 7
+
+
+def test_service_custom_data_retention(
+    client_request, service_one, mock_get_service_data_retention,
+):
+    mock_get_service_data_retention.side_effect = [[{
+        'days_of_retention': 10, 'notification_type': 'sms',
+    }]]
+    assert Service(service_one).get_days_of_retention('sms') == 10
+
+
+@pytest.mark.parametrize('now, expected_cutoff', (
+    ('2020-01-17 12:34', '2020-01-10T00:00:00+00:00'),
+    ('2020-07-27 12:34', '2020-07-20T00:00:00+01:00'),
+))
+def test_service_data_retention_cutoff(
+    client_request, service_one, mock_get_service_data_retention, now, expected_cutoff,
+):
+    with freeze_time(now):
+        assert (
+            Service(service_one).get_data_retention_cutoff('sms').isoformat()
+        ) == expected_cutoff
