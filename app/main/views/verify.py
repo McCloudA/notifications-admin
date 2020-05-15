@@ -10,6 +10,7 @@ from flask import (
     url_for,
 )
 from itsdangerous import SignatureExpired
+from notifications_python_client.errors import HTTPError
 from notifications_utils.url_safe_token import check_token
 
 from app import user_api_client
@@ -93,5 +94,13 @@ def _add_invited_user_to_service(invited_user):
     invitation = InvitedUser(invited_user)
     user = User.from_id(session['user_id'])
     service_id = invited_user['service']
-    user_api_client.add_user_to_service(service_id, user.id, invitation.permissions, invitation.folder_permissions)
+
+    try:
+        user_api_client.add_user_to_service(service_id, user.id, invitation.permissions, invitation.folder_permissions)
+    except HTTPError as e:
+        if e.status_code == 400 and 'already part of service' in e.message:
+            pass
+        else:
+            raise
+
     return service_id

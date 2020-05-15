@@ -1,6 +1,7 @@
 from flask import abort, flash, redirect, render_template, session, url_for
 from flask_login import current_user
 from markupsafe import Markup
+from notifications_python_client.errors import HTTPError
 
 from app.main import main
 from app.models.organisation import Organisation
@@ -60,11 +61,17 @@ def accept_invite(token):
                 invited_user.auth_type == 'email_auth'
             ):
                 existing_user.update(auth_type=invited_user.auth_type)
-            existing_user.add_to_service(
-                service_id=invited_user.service,
-                permissions=invited_user.permissions,
-                folder_permissions=invited_user.folder_permissions,
-            )
+            try:
+                existing_user.add_to_service(
+                    service_id=invited_user.service,
+                    permissions=invited_user.permissions,
+                    folder_permissions=invited_user.folder_permissions,
+                )
+            except HTTPError as e:
+                if e.status_code == 400 and 'already part of service' in e.message:
+                    pass
+                else:
+                    raise
             return redirect(url_for('main.service_dashboard', service_id=service.id))
     else:
         return redirect(url_for('main.register_from_invite'))
